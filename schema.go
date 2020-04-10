@@ -1,7 +1,6 @@
 package main
 
 import (
-	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"time"
 )
@@ -20,27 +19,36 @@ func (ct *CustomTime) UnmarshalJSON(b []byte) (err error) {
 	return
 }
 
-// PubCode - the main data
-// This schema will change for each microservice
-type PubCode struct {
-	PubId   int64  `json:"pubid"`
-	PubData string `json:"pubdata"`
-}
-
-// ListRange - this structure is used for search and pagination
-type ListRange struct {
-	From   int
-	To     int
-	Search string
-}
-
 // ShcemaInterface - acts as an interface wrapper for our profile schema
 // All the go microservices will using this schema
-type SchemaInterface struct {
-	ID         bson.ObjectId `json:"_id" bson:"_id,omitempty"`
+type Pipeline struct {
+	Project    string        `json:"project"`
+	Scm        string        `json:"scm"`
+	Workdir    string        `json:"workdir"`
+	Stages     []StageDetail `json:"stages"`
 	LastUpdate int64         `json:"lastupdate,omitempty"`
 	MetaInfo   string        `json:"metainfo,omitempty"`
-	Schema     PubCode       `json:"schema" bson:"schema"`
+}
+
+type StageDetail struct {
+	Id       int      `json:"id"`
+	Name     string   `json:"name"`
+	Exec     string   `json:"exec"`
+	Wait     int      `json:"wait"`
+	Skip     bool     `json:"skip"`
+	Commands []string `json:"commands"`
+}
+
+type ProjectList struct {
+	Projects []ProjectDetail `json:"projects"`
+}
+
+type ProjectDetail struct {
+	Name     string `json:"name"`
+	Scm      string `json:"scm"`
+	Workdir  string `json:"workdir"`
+	Path     string `json:"path"`
+	MetaInfo string `json:"metainfo,omitempty"`
 }
 
 // Response schema
@@ -48,5 +56,4 @@ type Response struct {
 	StatusCode string `json:"statuscode"`
 	Status     string `json:"status"`
 	Message    string `json:"message"`
-	Payload    []SchemaInterface
 }

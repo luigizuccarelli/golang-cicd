@@ -1,3 +1,4 @@
 .scannerwork/
 tests/
-bin/microservice
+microservice
+work/

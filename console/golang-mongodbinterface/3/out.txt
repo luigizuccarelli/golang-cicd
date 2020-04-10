@@ -1,0 +1,180 @@
+Executing : pipeline stage [3] : Test
+mv cmd .cmd
+go test -v -tags=test  -coverprofile=tests/results/cover.out ./...
+=== RUN   TestImplementation
+=== RUN   TestImplementation/Insert_:_should_pass
+=== RUN   TestImplementation/Insert_:_should_fail
+2020/03/26 06:44:08 [1;31m [ERROR] [0m : DBInsert :  json: cannot unmarshal string into Go value of type schema.SchemaInterface
+ 
+=== RUN   TestImplementation/DBInsert_:_should_fail_(forced_error)
+2020/03/26 06:44:08 [1;31m [ERROR] [0m : DBInsert :  Forced Error
+ 
+=== RUN   TestImplementation/DBUpdate_:_should_pass
+=== RUN   TestImplementation/DBUpdate_:_should_fail
+2020/03/26 06:44:08 [1;31m [ERROR] [0m : DBUpdate :  json: cannot unmarshal string into Go value of type schema.SchemaInterface
+ 
+=== RUN   TestImplementation/DBUpdate_:_should_fail_(forced_error)
+2020/03/26 06:44:08 [1;31m [ERROR] [0m : DBUpdate :  Forced Error
+ 
+=== RUN   TestImplementation/DBGet_:_should_pass
+=== RUN   TestImplementation/DBDelete_:_should_pass
+=== RUN   TestImplementation/DBList_:_should_pass
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : DBList []
+ 
+--- PASS: TestImplementation (0.00s)
+    --- PASS: TestImplementation/Insert_:_should_pass (0.00s)
+    --- PASS: TestImplementation/Insert_:_should_fail (0.00s)
+    --- PASS: TestImplementation/DBInsert_:_should_fail_(forced_error) (0.00s)
+    --- PASS: TestImplementation/DBUpdate_:_should_pass (0.00s)
+    --- PASS: TestImplementation/DBUpdate_:_should_fail (0.00s)
+    --- PASS: TestImplementation/DBUpdate_:_should_fail_(forced_error) (0.00s)
+    --- PASS: TestImplementation/DBGet_:_should_pass (0.00s)
+    --- PASS: TestImplementation/DBDelete_:_should_pass (0.00s)
+    --- PASS: TestImplementation/DBList_:_should_pass (0.00s)
+PASS
+coverage: 84.1% of statements
+ok  	gitea-cicd.apps.aws2-dev.ocp.14west.io/cicd/golang-mongodbinterface/pkg/connectors	0.003s	coverage: 84.1% of statements
+=== RUN   TestHandlers
+=== RUN   TestHandlers/IsAlive_:_should_pass
+=== RUN   TestHandlers/DBInsert_:_should_pass
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : MW call  DBInsert succesfull
+ 
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : MW call  DBInsert succesfull
+ 
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : Response {
+	"statuscode": "200",
+	"status": "OK",
+	"message": "MW call  DBInsert successfull \n",
+	"payload": [
+		{
+			"_id": "",
+			"lastupdate": 1585205048,
+			"metainfo": "Database Insert",
+			"custom": {
+				"name": "",
+				"surname": "",
+				"email": "",
+				"title": "",
+				"mobile": "",
+				"address": ""
+			}
+		}
+	]
+} 
+=== RUN   TestHandlers/DBUpdate_:_should_pass
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : MW call  DBUpdate succesfull
+ 
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : MW call  DBUpdate succesfull
+ 
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : Response {
+	"statuscode": "200",
+	"status": "OK",
+	"message": "MW call  DBUpdate successfull \n",
+	"payload": [
+		{
+			"_id": "5cc042307ccc69ada893144c",
+			"lastupdate": 1585205048,
+			"metainfo": "Database Update",
+			"custom": {
+				"name": "test",
+				"surname": "test",
+				"email": "test@test",
+				"title": "",
+				"mobile": "",
+				"address": ""
+			}
+		}
+	]
+} 
+=== RUN   TestHandlers/DBGet_:_should_pass
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : MW call  DBGet succesfull
+ 
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : Response {
+	"statuscode": "200",
+	"status": "OK",
+	"message": "MW call  DBGet successfull \n",
+	"payload": [
+		{
+			"_id": "5cc042307ccc69ada893144c",
+			"lastupdate": 1323434,
+			"metainfo": "nada",
+			"custom": {
+				"name": "test",
+				"surname": "test",
+				"email": "test@test",
+				"title": "",
+				"mobile": "",
+				"address": ""
+			}
+		}
+	]
+} 
+=== RUN   TestHandlers/DBDelete_:_should_pass
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : MW call  DBDelete succesfull
+ 
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : Response {
+	"statuscode": "200",
+	"status": "OK",
+	"message": "MW call  DBDelete successfull \n",
+	"payload": [
+		{
+			"_id": "",
+			"lastupdate": 1585205048,
+			"metainfo": "Database Delete",
+			"custom": {
+				"name": "",
+				"surname": "",
+				"email": "",
+				"title": "",
+				"mobile": "",
+				"address": ""
+			}
+		}
+	]
+} 
+=== RUN   TestHandlers/DBList_:_should_pass
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : MW call  DBList succesfull
+ 
+2020/03/26 06:44:08 [1;34m [INFO] [0m  : Response {
+	"statuscode": "200",
+	"status": "OK",
+	"message": "MW call  DBList successfull \n",
+	"payload": [
+		{
+			"_id": "5cc042307ccc69ada893144c",
+			"lastupdate": 1323434,
+			"metainfo": "nada",
+			"custom": {
+				"name": "test",
+				"surname": "test",
+				"email": "test@test",
+				"title": "",
+				"mobile": "",
+				"address": ""
+			}
+		}
+	]
+} 
+--- PASS: TestHandlers (0.00s)
+    --- PASS: TestHandlers/IsAlive_:_should_pass (0.00s)
+    --- PASS: TestHandlers/DBInsert_:_should_pass (0.00s)
+    --- PASS: TestHandlers/DBUpdate_:_should_pass (0.00s)
+    --- PASS: TestHandlers/DBGet_:_should_pass (0.00s)
+    --- PASS: TestHandlers/DBDelete_:_should_pass (0.00s)
+    --- PASS: TestHandlers/DBList_:_should_pass (0.00s)
+PASS
+coverage: 87.7% of statements
+ok  	gitea-cicd.apps.aws2-dev.ocp.14west.io/cicd/golang-mongodbinterface/pkg/handlers	0.003s	coverage: 87.7% of statements
+?   	gitea-cicd.apps.aws2-dev.ocp.14west.io/cicd/golang-mongodbinterface/pkg/schema	[no test files]
+=== RUN   TestEnvars
+=== RUN   TestEnvars/ValidateEnvars_:_should_fail
+2020/03/26 06:44:08 [1;31m [ERROR] [0m : LOG_LEVEL envar is empty please set it 
+2020/03/26 06:44:08 [1;31m [ERROR] [0m : SERVER_PORT envar is mandatory please set it 
+=== RUN   TestEnvars/ValidateEnvars_:_should_pass
+--- PASS: TestEnvars (0.00s)
+    --- PASS: TestEnvars/ValidateEnvars_:_should_fail (0.00s)
+    --- PASS: TestEnvars/ValidateEnvars_:_should_pass (0.00s)
+PASS
+coverage: 100.0% of statements
+ok  	gitea-cicd.apps.aws2-dev.ocp.14west.io/cicd/golang-mongodbinterface/pkg/validator	0.002s	coverage: 100.0% of statements
+mv .cmd cmd

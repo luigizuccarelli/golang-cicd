@@ -1,0 +1,12 @@
+{
+  "projects": [
+    {
+      "name": "Golang MongoDB Interface",
+      "metainfo": "Author LMZ 03/2020",
+      "workdir": "work",
+      "path": "golang-mongodbinterface",
+      "scm": "git@github.com:luigizuccarelli/golang-mongodbinterface.git"
+    }
+  ]
+}
+

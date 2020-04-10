@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-myportfolio-dbinterface
+spec:
+  parallelism: 1    
+  completions: 1    
+  template:         
+    metadata:
+      name: kaniko-myportfolio-dbinterface
+    spec:
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args: [
+          "--dockerfile=/godata/pipelines/myportfolio-dbinterface/Dockerfile",
+          "--context=/godata/pipelines/myportfolio-dbinterface",
+          "--destination=nexus-registry-nexus.apps.aws2-dev.ocp.14west.io/myportfolio-dbinterface:1.13.1"
+        ]
+        volumeMounts:
+        - mountPath: /godata
+          name: gocdagent-data
+        - mountPath: /kaniko/.docker/config.json
+          name: docker-creds
+          subPath: config.json
+        env:
+        - name: DESITINATION
+          value: nexus-registry-nexus.apps.aws2-dev.ocp.14west.io/myportfolio-dbinterface:1.13.1
+      restartPolicy: Never   
+      volumes:
+      - name: gocdagent-data
+        persistentVolumeClaim:
+          claimName: gocdagent
+      - name: docker-creds
+        configMap:
+          defaultMode: 420
+          name: configcontent
+      backoffLimit: 1

@@ -1,0 +1,34 @@
+Executing : pipeline stage [6] : Container
+STEP 1: FROM registry.access.redhat.com/ubi8/ubi-init:latest
+STEP 2: LABEL maintainer="lzuccarelli@tfd.ie"
+--> Using cache d251f3817540b4686ba87ea2ba5bfc9a89e93cdef46d67d279b67f523c2a1d55
+STEP 3: RUN dnf install -y git gcc make && rm -rf /var/lib/apt/lists/*
+--> Using cache 9e1861482c8705c18204cc5b696f7b11b3a8b9dc87521d34ef2cfb64092a6e77
+STEP 4: ENV GOLANG_VERSION 1.13.1
+--> Using cache b98f3fb4012d3dd78031ac55569be328c411b03a9bc8173be53388c44176e986
+STEP 5: ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
+--> Using cache d40bcf7c6ee36eff3fa019b973496e693cc9ed0723eb5cb75067802b9d5dbdd8
+STEP 6: ENV GOLANG_DOWNLOAD_SHA256 94f874037b82ea5353f4061e543681a0e79657f787437974214629af8407d124
+--> Using cache b755c2e622fc96c7733f5dc5e144fd94ca5cba1114fb963c1979e1511eaa5516
+STEP 7: RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz 	&& echo "$GOLANG_DOWNLOAD_SHA256  golang.tar.gz" | sha256sum -c - 	&& tar -C /usr/local -xzf golang.tar.gz 	&& rm golang.tar.gz
+--> Using cache ca594b664d0e1b595bc9e620938a3c220a0f2fdc9517c14f90312755a8f246a6
+STEP 8: ENV GOPATH /go
+--> Using cache 04bcc008cdc3a33b8d08db3f28e6f6cb7abf645183808ee84d3bbcff8fa96fca
+STEP 9: ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+--> Using cache 5ad4f11929f235fc518a8553994bafb6c75b956e33002a448c7acc1192748d39
+STEP 10: COPY build/microservice uid_entrypoint.sh /go/ 
+9993ab20d8da1a02bf2759d68f400f4449fedc9ab88a2c93fb87d56b84a02b71
+STEP 11: COPY swaggerui/ /go/swaggerui/
+fc70a50157a6baaa2cb5eaa75f639bd78502af89816372621ea59f6aa634b43c
+STEP 12: RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 0755 "$GOPATH"
+916f5a741432ce1d2431dd5004e1c795133943bca08825e429e5f7767780ad1e
+STEP 13: WORKDIR $GOPATH
+f705ce01b376397c6f699294f07b8032b1d81e0b2a0b5a3e397c9014c0d482be
+STEP 14: USER 1001
+5eff4dbc7891157f322e2622167619ec5001a9a6405d440bda055c2c89a5e7fa
+STEP 15: ENTRYPOINT [ "./uid_entrypoint.sh" ]
+b682427189aee8456dc2299e522e9361d7766b912f6a9d7ccb7524ffb14f8efa
+STEP 16: CMD ["./microservice"]
+STEP 17: COMMIT lzuccarelli/golang-mongodbinterface:1.13.1
+8dcc77602621bb486fbc2788fca63e1e24ce480c9d300bd537e824808bf31248
+8dcc77602621bb486fbc2788fca63e1e24ce480c9d300bd537e824808bf31248

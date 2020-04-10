@@ -1,0 +1,71 @@
+{
+  "project": "Golang MongoDB Interface",
+  "metainfo": "Author LMZ 03/2020",
+  "workdir": "work",
+  "scm": "git@github.com:luigizuccarelli/golang-mongodbinterface.git",
+	"stages": [
+		{
+      "id" : 1,
+			"name": "Git check",
+      "exec": "ls",
+      "wait": 5,
+      "skip": false,
+			"commands": [
+        "-la"
+      ]
+    },
+    {
+      "id" : 2,
+			"name": "Clean",
+      "exec": "make",
+      "wait": 5,
+      "skip": false,
+			"commands": [
+        "clean"
+      ]
+    },
+    {
+      "id" : 3,
+			"name": "Test",
+      "exec": "make",
+      "wait": 5,
+      "skip": false,
+			"commands": [
+        "test"
+      ]
+    },
+    {
+      "id" : 4,
+			"name": "Cover",
+      "exec": "make",
+      "wait": 5,
+      "skip": false,
+			"commands": [
+        "cover"
+      ]
+    },
+    {
+      "id" : 5,
+			"name": "Compile",
+      "exec": "make",
+      "wait": 10,
+      "skip": false,
+			"commands": [
+        "build"
+      ]
+    },
+    {
+      "id" : 6,
+			"name": "Container",
+      "exec": "podman",
+      "wait": 5,
+      "skip": false,
+			"commands": [
+        "build",
+        "-t",
+        "docker.io/lzuccarelli/golang-mongodbinterface:1.13.1",
+        "."
+      ]
+    }
+  ]
+}
