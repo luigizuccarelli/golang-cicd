@@ -1,2 +1,0 @@
-Executing : pipeline stage [4] : Cover
-go tool cover -html=tests/results/cover.out -o tests/results/cover.html

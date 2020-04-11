@@ -59,12 +59,39 @@
 			"name": "Container",
       "exec": "podman",
       "wait": 5,
-      "skip": false,
+      "skip": true,
 			"commands": [
         "build",
         "-t",
         "docker.io/lzuccarelli/golang-mongodbinterface:1.13.1",
         "."
+      ]
+    },
+    {
+      "id" : 7,
+			"name": "Deploy",
+      "exec": ".microservice",
+      "wait": 5,
+      "skip": false,
+      "replicas" : 3,
+      "service": "golang-composite",
+      "envars": [
+        {
+          "name":"SERVER_PORT",
+          "value": "8081"
+        },
+        {
+          "name":"LOG_LEVEL",
+          "value":"trace"
+        },
+        {
+          "name":"NAME",
+          "value":"golang-composite"
+        },
+        {
+          "name":"VERSION",
+          "value":"1.0.1"
+        }
       ]
     }
   ]

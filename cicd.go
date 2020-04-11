@@ -35,6 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// create lightweight go threads
 	cr := cron.New()
 	cr.AddFunc(os.Getenv("CRON"),
 		func() {
@@ -70,7 +71,11 @@ func execProjects(logger *simple.Logger) {
 	}
 	// create lightweight go threads
 	for i, _ := range list.Projects {
-		go executePipeline(list.Projects[i], logger)
+		if !list.Projects[i].Skip {
+			go executePipeline(list.Projects[i], logger)
+		} else {
+			logger.Warn(fmt.Sprintf("Skipping : Project : %s ", list.Projects[i].Name))
+		}
 	}
 }
 
@@ -137,7 +142,11 @@ func executePipeline(project ProjectDetail, logger *simple.Logger) {
 	}
 	logger.Info(fmt.Sprintf("Result : remote hash %s", hashRemote))
 
-	if hashLocal != hashRemote {
+	if (hashLocal != hashRemote) || project.Force == true {
+
+		if project.Force {
+			logger.Info("Force : project force flag == true")
+		}
 		// check out lates from master
 		args = []string{
 			"-c",
@@ -171,6 +180,12 @@ func executePipeline(project ProjectDetail, logger *simple.Logger) {
 				outLog := fmt.Sprintf("Executing : pipeline stage [%d] : %s", pipeline.Stages[x].Id, pipeline.Stages[x].Name)
 				logger.Info(outLog)
 				time.Sleep(time.Duration(pipeline.Stages[x].Wait) * time.Second)
+				if pipeline.Stages[x].Name == "Deploy" {
+					logger.Info(fmt.Sprintf("Envars : pipeline stage [%s] : %s", pipeline.Stages[x].Name, pipeline.Stages[x].Envars))
+					for k, _ := range pipeline.Stages[x].Envars {
+						os.Setenv(pipeline.Stages[x].Envars[k].Name, pipeline.Stages[x].Envars[k].Value)
+					}
+				}
 				res, e := execCommand(pipeline.Workdir+"/"+repoPath, pipeline.Stages[x].Exec, pipeline.Stages[x].Commands, false)
 				if e != nil {
 					logger.Error(fmt.Sprintf("Std err : %s", res))

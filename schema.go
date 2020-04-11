@@ -25,18 +25,27 @@ type Pipeline struct {
 	Project    string        `json:"project"`
 	Scm        string        `json:"scm"`
 	Workdir    string        `json:"workdir"`
+	Force      bool          `json:"force"`
 	Stages     []StageDetail `json:"stages"`
 	LastUpdate int64         `json:"lastupdate,omitempty"`
 	MetaInfo   string        `json:"metainfo,omitempty"`
 }
 
 type StageDetail struct {
-	Id       int      `json:"id"`
-	Name     string   `json:"name"`
-	Exec     string   `json:"exec"`
-	Wait     int      `json:"wait"`
-	Skip     bool     `json:"skip"`
-	Commands []string `json:"commands"`
+	Id       int           `json:"id"`
+	Name     string        `json:"name"`
+	Exec     string        `json:"exec"`
+	Wait     int           `json:"wait"`
+	Service  string        `json:"service"`
+	Replicas int           `json:"replicas"`
+	Skip     bool          `json:"skip"`
+	Envars   []EnvarDetail `json:"envars"`
+	Commands []string      `json:"commands"`
+}
+
+type EnvarDetail struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type ProjectList struct {
@@ -47,6 +56,8 @@ type ProjectDetail struct {
 	Name     string `json:"name"`
 	Scm      string `json:"scm"`
 	Workdir  string `json:"workdir"`
+	Force    bool   `json:"force"`
+	Skip     bool   `json:"skip"`
 	Path     string `json:"path"`
 	MetaInfo string `json:"metainfo,omitempty"`
 }

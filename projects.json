@@ -5,7 +5,18 @@
       "metainfo": "Author LMZ 03/2020",
       "workdir": "work",
       "path": "golang-mongodbinterface",
-      "scm": "git@github.com:luigizuccarelli/golang-mongodbinterface.git"
+      "scm": "git@github.com:luigizuccarelli/golang-mongodbinterface.git",
+      "skip": true,
+      "force": true
+    },
+    {
+      "name": "Golang Simple Microservice",
+      "metainfo": "Author LMZ 04/2020",
+      "workdir": "work",
+      "path": "golang-simple-service",
+      "scm": "git@github.com:luigizuccarelli/golang-simple-service.git",
+      "skip": false,
+      "force": false
     }
   ]
 }

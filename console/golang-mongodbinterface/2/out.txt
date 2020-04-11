@@ -1,3 +1,0 @@
-Executing : pipeline stage [2] : Clean
-rm -rf build/*
-go clean ./...

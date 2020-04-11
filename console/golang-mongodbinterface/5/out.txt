@@ -1,3 +1,0 @@
-Executing : pipeline stage [5] : Compile
-mkdir -p build
-go build -o build ./... 
