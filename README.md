@@ -1,5 +1,5 @@
-# golang-microservice-cron job
-A simple microservice that calls a url that updates myportfolio prices via a cron
+# golang-cicd (based on cron)
+A simple golang cicd process that uses a json file to setup projects
 
 ## set envars
 ```
