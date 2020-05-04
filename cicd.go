@@ -5,21 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
+	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/microlib/simple"
-	"gopkg.in/robfig/cron.v2"
 )
 
 var (
 	logger *simple.Logger
+	mu     sync.Mutex
 )
 
 func main() {
@@ -35,63 +36,107 @@ func main() {
 		os.Exit(1)
 	}
 
-	// create lightweight go threads
-	cr := cron.New()
-	cr.AddFunc(os.Getenv("CRON"),
-		func() {
-			execProjects(logger)
-		})
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	signal.Notify(c, syscall.SIGTERM)
-
-	go func() {
-		<-c
-		cleanup(cr)
-		os.Exit(1)
-	}()
-
-	cr.Start()
-
-	for {
-		logger.Debug(fmt.Sprintf("NOP sleeping for %s seconds", os.Getenv("SLEEP")))
-		s, _ := strconv.Atoi(os.Getenv("SLEEP"))
-		time.Sleep(time.Duration(s) * time.Second)
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
 	}
+
+	http.HandleFunc("/api/v1/websocket/streamdata", func(w http.ResponseWriter, r *http.Request) {
+		upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+		conn, _ := upgrader.Upgrade(w, r, nil)
+		defer conn.Close()
+		logger.Trace(fmt.Sprintf("Websocket connection %v", conn))
+		execProjects(conn, logger)
+	})
+
+	logger.Info("Starting websocket on 8080")
+	http.ListenAndServe(":8080", nil)
+
 }
 
-func execProjects(logger *simple.Logger) {
-	var list ProjectList
+func execProjects(conn *websocket.Conn, logger *simple.Logger) {
+	var project ProjectDetail
 
-	data, _ := ioutil.ReadFile("projects.json")
-	err := json.Unmarshal([]byte(data), &list)
-	if err != nil {
-		logger.Error(fmt.Sprintf("Converting projects.json  %v", err))
-		return
-	}
-	// create lightweight go threads
-	for i, _ := range list.Projects {
-		if !list.Projects[i].Skip {
-			go executePipeline(list.Projects[i], logger)
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			logger.Error(fmt.Sprintf("Reading websocket message  %v", err))
+			return
 		} else {
-			logger.Warn(fmt.Sprintf("Skipping : Project : %s ", list.Projects[i].Name))
+			if string(message) == "poll" {
+				data, _ := ioutil.ReadFile("project.json")
+				err := json.Unmarshal([]byte(data), &project)
+				if err != nil {
+					logger.Error(fmt.Sprintf("Converting project.json  %v", err))
+				}
+				logger.Info(fmt.Sprintf("Read project file : %s ", string(data)))
+				// create lightweight go threads
+				for i, _ := range project.Repositories {
+					if !project.Repositories[i].Skip {
+						go executePipeline(conn, project.Repositories[i], logger)
+					} else {
+						logger.Warn(fmt.Sprintf("Skipping : Project : %s ", project.Repositories[i].Name))
+					}
+				}
+			} else {
+				logger.Info("Simulate test from FE")
+				str := "1000-:clear"
+				send(conn, str, logger)
+
+				time.Sleep(2 * time.Second)
+				str = "1000-1:pending"
+				send(conn, str, logger)
+
+				time.Sleep(5 * time.Second)
+				str = "1000-1:success"
+				send(conn, str, logger)
+
+				time.Sleep(1 * time.Second)
+				str = "1000-2:pending"
+				send(conn, str, logger)
+
+				time.Sleep(5 * time.Second)
+				str = "1000-2:success"
+				send(conn, str, logger)
+
+				time.Sleep(1 * time.Second)
+				str = "1000-3:skipping"
+				send(conn, str, logger)
+
+				time.Sleep(1 * time.Second)
+				str = "1000-4:pending"
+				send(conn, str, logger)
+
+				time.Sleep(5 * time.Second)
+				str = "1000-4:success"
+				send(conn, str, logger)
+
+				time.Sleep(1 * time.Second)
+				str = "1000-5:pending"
+				send(conn, str, logger)
+
+				time.Sleep(5 * time.Second)
+				str = "1000-5:error"
+				send(conn, str, logger)
+			}
 		}
 	}
 }
 
 // utilities
 
-func executePipeline(project ProjectDetail, logger *simple.Logger) {
+func executePipeline(conn *websocket.Conn, repo Repository, logger *simple.Logger) {
 	var pipeline *Pipeline
 
-	logger.Info(fmt.Sprintf("Scanning : Project : %s - %s", project.Name, project.Path))
-	_, errStat := os.Stat(project.Workdir + "/" + project.Path)
+	workDirPath := repo.WorkDir + "/" + repo.Path
+	logger.Info(fmt.Sprintf("Scanning : Project : %s - %s", repo.Name, repo.Path))
+	_, errStat := os.Stat(workDirPath)
 	if os.IsNotExist(errStat) {
 		args := []string{
 			"-c",
-			"git clone " + project.Scm,
+			"git clone " + repo.Scm,
 		}
-		res, e := execOS(project.Workdir, args, false)
+		res, e := execOS(repo.WorkDir, args, false)
 		if e != nil {
 			logger.Error(fmt.Sprintf("Std err : %s", res))
 			logger.Error(fmt.Sprintf("Command : "+strings.Join(args, " ")+" %v", e))
@@ -107,7 +152,7 @@ func executePipeline(project ProjectDetail, logger *simple.Logger) {
 		"-c",
 		"git fetch origin",
 	}
-	res, e := execOS(project.Workdir+"/"+project.Path, args, false)
+	res, e := execOS(workDirPath, args, false)
 	if e != nil {
 		logger.Error(fmt.Sprintf("Std err : %s", res))
 		logger.Error(fmt.Sprintf("Command : "+strings.Join(args, " ")+" %v", e))
@@ -121,7 +166,7 @@ func executePipeline(project ProjectDetail, logger *simple.Logger) {
 		"git rev-parse --short HEAD",
 	}
 
-	hashLocal, e := execOS(project.Workdir+"/"+project.Path, args, true)
+	hashLocal, e := execOS(workDirPath, args, true)
 	if e != nil {
 		logger.Error(fmt.Sprintf("Std err : %s", hashLocal))
 		logger.Error(fmt.Sprintf("Command : "+strings.Join(args, " ")+"%s %v", e))
@@ -134,7 +179,7 @@ func executePipeline(project ProjectDetail, logger *simple.Logger) {
 		"-c",
 		"git rev-parse --short origin/master",
 	}
-	hashRemote, e := execOS(project.Workdir+"/"+project.Path, args, true)
+	hashRemote, e := execOS(workDirPath, args, true)
 	if e != nil {
 		logger.Error(fmt.Sprintf("Std err : %s", hashRemote))
 		logger.Error(fmt.Sprintf("Command : "+strings.Join(args, " ")+" %v", e))
@@ -142,17 +187,17 @@ func executePipeline(project ProjectDetail, logger *simple.Logger) {
 	}
 	logger.Info(fmt.Sprintf("Result : remote hash %s", hashRemote))
 
-	if (hashLocal != hashRemote) || project.Force == true {
+	if (hashLocal != hashRemote) || repo.Force == true {
 
-		if project.Force {
-			logger.Info("Force : project force flag == true")
+		if repo.Force {
+			logger.Info("Force : repo force flag == true")
 		}
 		// check out lates from master
 		args = []string{
 			"-c",
 			"git pull origin",
 		}
-		res, e := execOS(project.Workdir+"/"+project.Path, args, false)
+		res, e := execOS(workDirPath, args, false)
 		if e != nil {
 			logger.Error(fmt.Sprintf("Std err : %s", hashRemote))
 			logger.Error(fmt.Sprintf("Command : "+strings.Join(args, " ")+" %v", e))
@@ -161,42 +206,61 @@ func executePipeline(project ProjectDetail, logger *simple.Logger) {
 		time.Sleep(2 * time.Second)
 		logger.Info(fmt.Sprintf("Result : git pull origin %s", res))
 
-		file, _ := ioutil.ReadFile(project.Workdir + "/" + project.Path + "/cicd.json")
+		file, _ := ioutil.ReadFile(workDirPath + "/cicd.json")
 		err := json.Unmarshal([]byte(file), &pipeline)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Converting cicd.json %v", err))
 			return
 		}
 		logger.Trace(fmt.Sprintf("Schema : %v", pipeline))
-		repoPath := project.Path
-		logger.Debug(fmt.Sprintf("Path : %s", repoPath))
-		time.Sleep(1 * time.Second)
+		logger.Debug(fmt.Sprintf("Path : %s", repo.Path))
 
 		// we can now start the actual pipeline
 		logger.Info("[Start Pipeline]\n")
-		removeContents("console/" + repoPath)
+		removeContents("console/" + repo.Path)
+		str := pipeline.Id + "-" + ":clear"
+		send(conn, str, logger)
+		time.Sleep(2 * time.Second)
 		for x, _ := range pipeline.Stages {
 			if !pipeline.Stages[x].Skip {
 				outLog := fmt.Sprintf("Executing : pipeline stage [%d] : %s", pipeline.Stages[x].Id, pipeline.Stages[x].Name)
+				str := pipeline.Id + "-" + strconv.Itoa(pipeline.Stages[x].Id) + ":pending"
+				se := send(conn, str, logger)
+				if se != nil {
+					logger.Error(fmt.Sprintf("Websocket send : %s", se))
+				}
 				logger.Info(outLog)
-				time.Sleep(time.Duration(pipeline.Stages[x].Wait) * time.Second)
+				time.Sleep(time.Duration(pipeline.Stages[x].Wait) * 1 * time.Second)
 				if pipeline.Stages[x].Name == "Deploy" {
 					logger.Info(fmt.Sprintf("Envars : pipeline stage [%s] : %s", pipeline.Stages[x].Name, pipeline.Stages[x].Envars))
 					for k, _ := range pipeline.Stages[x].Envars {
 						os.Setenv(pipeline.Stages[x].Envars[k].Name, pipeline.Stages[x].Envars[k].Value)
 					}
 				}
-				res, e := execCommand(pipeline.Workdir+"/"+repoPath, pipeline.Stages[x].Exec, pipeline.Stages[x].Commands, false)
+				res, e := execCommand(workDirPath, pipeline.Stages[x].Exec, pipeline.Stages[x].Commands, false)
 				if e != nil {
 					logger.Error(fmt.Sprintf("Std err : %s", res))
 					logger.Error(fmt.Sprintf("Command : "+strings.Join(pipeline.Stages[x].Commands, " ")+" %v", e))
-					consoleLog(repoPath+"/"+strconv.Itoa(pipeline.Stages[x].Id), outLog+"\n"+res)
+					consoleLog(repo.Path+"/"+strings.ToLower(pipeline.Stages[x].Name), outLog+"\n"+res)
+					str := pipeline.Id + "-" + strconv.Itoa(pipeline.Stages[x].Id) + ":error"
+					se := send(conn, str, logger)
+					if se != nil {
+						logger.Error(fmt.Sprintf("Websocket send : %s", se))
+					}
 					break
 				}
 				logger.Info(fmt.Sprintf("Result : %s", res))
-				consoleLog(repoPath+"/"+strconv.Itoa(pipeline.Stages[x].Id), outLog+"\n"+res)
+				consoleLog(repo.Path+"/"+strings.ToLower(pipeline.Stages[x].Name), outLog+"\n"+res)
+				str = pipeline.Id + "-" + strconv.Itoa(pipeline.Stages[x].Id) + ":success"
+				se = send(conn, str, logger)
+				if se != nil {
+					logger.Error(fmt.Sprintf("Websocket send : %s", se))
+				}
 			} else {
 				logger.Warn(fmt.Sprintf("Skipping : pipeline stage [%d] : %s", pipeline.Stages[x].Id, pipeline.Stages[x].Name))
+				str := pipeline.Id + "-" + strconv.Itoa(pipeline.Stages[x].Id) + ":skipping"
+				send(conn, str, logger)
+				time.Sleep(2 * time.Second)
 			}
 		}
 		logger.Info("[End Pipeline]")
@@ -205,10 +269,12 @@ func executePipeline(project ProjectDetail, logger *simple.Logger) {
 	}
 }
 
-func cleanup(c *cron.Cron) {
-	logger.Warn("Cleanup resources")
-	logger.Info("Terminating")
-	c.Stop()
+// mutex on websocket wrtite
+func send(conn *websocket.Conn, str string, logger *simple.Logger) error {
+	mu.Lock()
+	defer mu.Unlock()
+	logger.Trace(fmt.Sprintf("Sending websocket message %s ", str))
+	return conn.WriteMessage(1, []byte(str))
 }
 
 func execCommand(path string, c string, params []string, trim bool) (string, error) {
@@ -254,7 +320,11 @@ func execOS(path string, params []string, trim bool) (string, error) {
 func consoleLog(path string, data string) error {
 	os.MkdirAll("console/"+path, os.ModePerm)
 	err := ioutil.WriteFile("console/"+path+"/out.txt", []byte(data), 0755)
-	return err
+	if err != nil {
+		logger.Error(fmt.Sprintf("Writing log file %v", err))
+		return err
+	}
+	return nil
 }
 
 func removeContents(dir string) error {

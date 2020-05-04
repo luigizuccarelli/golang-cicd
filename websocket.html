@@ -1,0 +1,22 @@
+<!-- websockets.html -->
+<pre id="output"></pre>
+<input type="button" onclick="send('poll');" value="send"/>
+<input type="button" onclick="send('test');" value="test"/>
+<script>
+
+  var output = document.getElementById("output");
+  var socket = new WebSocket("ws://127.0.0.1:8080/api/v1/websocket/streamdata");
+
+  socket.onopen = function () {
+    output.innerHTML += "Status: Connected\n";
+  };
+
+  socket.onmessage = function (e) {
+    output.innerHTML += "Server: " + e.data + "\n";
+  };
+
+  function send(val) {
+    socket.send(val);
+  }
+
+</script>

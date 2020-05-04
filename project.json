@@ -1,13 +1,15 @@
 {
-  "projects": [
+  "name": "lmz-util",
+  "repositories": [
     {
       "name": "Golang MongoDB Interface",
       "metainfo": "Author LMZ 03/2020",
       "workdir": "work",
       "path": "golang-mongodbinterface",
       "scm": "git@github.com:luigizuccarelli/golang-mongodbinterface.git",
-      "skip": true,
-      "force": true
+      "cicd-raw-url": "https://raw.githubusercontent.com/luigizuccarelli/golang-mongodbinterface/master/cicd.json",
+      "skip": false,
+      "force": false
     },
     {
       "name": "Golang Simple Microservice",
@@ -15,6 +17,7 @@
       "workdir": "work",
       "path": "golang-simple-service",
       "scm": "git@github.com:luigizuccarelli/golang-simple-service.git",
+      "cicd-raw-url": "https://raw.githubusercontent.com/luigizuccarelli/golang-simple-service/master/cicd.json",
       "skip": false,
       "force": false
     }

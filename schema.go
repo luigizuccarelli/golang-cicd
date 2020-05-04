@@ -22,6 +22,7 @@ func (ct *CustomTime) UnmarshalJSON(b []byte) (err error) {
 // ShcemaInterface - acts as an interface wrapper for our profile schema
 // All the go microservices will using this schema
 type Pipeline struct {
+	Id         string        `json:"id"`
 	Project    string        `json:"project"`
 	Scm        string        `json:"scm"`
 	Workdir    string        `json:"workdir"`
@@ -41,6 +42,8 @@ type StageDetail struct {
 	Skip     bool          `json:"skip"`
 	Envars   []EnvarDetail `json:"envars"`
 	Commands []string      `json:"commands"`
+	Status   string        `json:"status"`
+	Log      string        `json:"log"`
 }
 
 type EnvarDetail struct {
@@ -48,23 +51,29 @@ type EnvarDetail struct {
 	Value string `json:"value"`
 }
 
-type ProjectList struct {
-	Projects []ProjectDetail `json:"projects"`
+// Response schema
+type Response struct {
+	Name       string      `json:"name"`
+	StatusCode string      `json:"statuscode"`
+	Status     string      `json:"status"`
+	Message    string      `json:"message"`
+	Stage      StageDetail `json:"stage,omitempty"`
+	MetaInfo   string      `json:"metainfo,omitempty"`
+	Payload    []Pipeline  `json:"payload"`
+}
+
+type Repository struct {
+	Name     string `json:"name"`
+	MetaInfo string `json:"metainfo"`
+	WorkDir  string `json:"workdir"`
+	Path     string `json:"path"`
+	Scm      string `json:"scm"`
+	RawUrl   string `json:"cicd-raw-url"`
+	Skip     bool   `json:"skip"`
+	Force    bool   `json:"force"`
 }
 
 type ProjectDetail struct {
-	Name     string `json:"name"`
-	Scm      string `json:"scm"`
-	Workdir  string `json:"workdir"`
-	Force    bool   `json:"force"`
-	Skip     bool   `json:"skip"`
-	Path     string `json:"path"`
-	MetaInfo string `json:"metainfo,omitempty"`
-}
-
-// Response schema
-type Response struct {
-	StatusCode string `json:"statuscode"`
-	Status     string `json:"status"`
-	Message    string `json:"message"`
+	Name         string       `json:"name"`
+	Repositories []Repository `json:"repositories"`
 }
