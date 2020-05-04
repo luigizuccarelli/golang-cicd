@@ -31,8 +31,6 @@ func checkEnvar(item string, logger *simple.Logger) error {
 func ValidateEnvars(logger *simple.Logger) error {
 	items := []string{
 		"LOG_LEVEL,false",
-		"SLEEP,true",
-		"CRON,true",
 	}
 	for x, _ := range items {
 		if err := checkEnvar(items[x], logger); err != nil {

@@ -63,6 +63,7 @@ type Response struct {
 }
 
 type Repository struct {
+	Id       string `json:"id"`
 	Name     string `json:"name"`
 	MetaInfo string `json:"metainfo"`
 	WorkDir  string `json:"workdir"`

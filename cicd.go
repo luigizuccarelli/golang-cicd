@@ -56,6 +56,7 @@ func main() {
 
 func execProjects(conn *websocket.Conn, logger *simple.Logger) {
 	var project ProjectDetail
+	var force bool = false
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -63,61 +64,31 @@ func execProjects(conn *websocket.Conn, logger *simple.Logger) {
 			logger.Error(fmt.Sprintf("Reading websocket message  %v", err))
 			return
 		} else {
-			if string(message) == "poll" {
+			force = (strings.Index(string(message), "force") > 0)
+			if string(message) == "poll" || force {
 				data, _ := ioutil.ReadFile("project.json")
 				err := json.Unmarshal([]byte(data), &project)
 				if err != nil {
 					logger.Error(fmt.Sprintf("Converting project.json  %v", err))
 				}
 				logger.Info(fmt.Sprintf("Read project file : %s ", string(data)))
-				// create lightweight go threads
+				// TODO:create lightweight go threads
 				for i, _ := range project.Repositories {
 					if !project.Repositories[i].Skip {
-						go executePipeline(conn, project.Repositories[i], logger)
+						if force {
+							id := strings.Split(string(message), "-")
+							if id[0] == project.Repositories[i].Id {
+								project.Repositories[i].Force = true
+							}
+						}
+						executePipeline(conn, project.Repositories[i], logger)
 					} else {
 						logger.Warn(fmt.Sprintf("Skipping : Project : %s ", project.Repositories[i].Name))
 					}
 				}
 			} else {
-				logger.Info("Simulate test from FE")
-				str := "1000-:clear"
-				send(conn, str, logger)
-
-				time.Sleep(2 * time.Second)
-				str = "1000-1:pending"
-				send(conn, str, logger)
-
-				time.Sleep(5 * time.Second)
-				str = "1000-1:success"
-				send(conn, str, logger)
-
-				time.Sleep(1 * time.Second)
-				str = "1000-2:pending"
-				send(conn, str, logger)
-
-				time.Sleep(5 * time.Second)
-				str = "1000-2:success"
-				send(conn, str, logger)
-
-				time.Sleep(1 * time.Second)
-				str = "1000-3:skipping"
-				send(conn, str, logger)
-
-				time.Sleep(1 * time.Second)
-				str = "1000-4:pending"
-				send(conn, str, logger)
-
-				time.Sleep(5 * time.Second)
-				str = "1000-4:success"
-				send(conn, str, logger)
-
-				time.Sleep(1 * time.Second)
-				str = "1000-5:pending"
-				send(conn, str, logger)
-
-				time.Sleep(5 * time.Second)
-				str = "1000-5:error"
-				send(conn, str, logger)
+				id := strings.Split(string(message), "-")
+				execTest(conn, id[0], logger)
 			}
 		}
 	}
@@ -221,6 +192,8 @@ func executePipeline(conn *websocket.Conn, repo Repository, logger *simple.Logge
 		str := pipeline.Id + "-" + ":clear"
 		send(conn, str, logger)
 		time.Sleep(2 * time.Second)
+		var wait sync.WaitGroup
+
 		for x, _ := range pipeline.Stages {
 			if !pipeline.Stages[x].Skip {
 				outLog := fmt.Sprintf("Executing : pipeline stage [%d] : %s", pipeline.Stages[x].Id, pipeline.Stages[x].Name)
@@ -237,6 +210,7 @@ func executePipeline(conn *websocket.Conn, repo Repository, logger *simple.Logge
 						os.Setenv(pipeline.Stages[x].Envars[k].Name, pipeline.Stages[x].Envars[k].Value)
 					}
 				}
+				wait.Add(1)
 				res, e := execCommand(workDirPath, pipeline.Stages[x].Exec, pipeline.Stages[x].Commands, false)
 				if e != nil {
 					logger.Error(fmt.Sprintf("Std err : %s", res))
@@ -256,6 +230,7 @@ func executePipeline(conn *websocket.Conn, repo Repository, logger *simple.Logge
 				if se != nil {
 					logger.Error(fmt.Sprintf("Websocket send : %s", se))
 				}
+				time.Sleep(time.Duration(pipeline.Stages[x].Wait) * 1 * time.Second)
 			} else {
 				logger.Warn(fmt.Sprintf("Skipping : pipeline stage [%d] : %s", pipeline.Stages[x].Id, pipeline.Stages[x].Name))
 				str := pipeline.Id + "-" + strconv.Itoa(pipeline.Stages[x].Id) + ":skipping"
@@ -264,9 +239,53 @@ func executePipeline(conn *websocket.Conn, repo Repository, logger *simple.Logge
 			}
 		}
 		logger.Info("[End Pipeline]")
+		wait.Wait()
 	} else {
 		logger.Info("Hashes are equal")
 	}
+}
+
+// test for front end
+func execTest(conn *websocket.Conn, id string, logger *simple.Logger) {
+	logger.Info(fmt.Sprintf("Simulate test from FE %s", id))
+	str := id + "-:clear"
+	send(conn, str, logger)
+
+	time.Sleep(2 * time.Second)
+	str = id + "-1:pending"
+	send(conn, str, logger)
+
+	time.Sleep(5 * time.Second)
+	str = id + "-1:success"
+	send(conn, str, logger)
+
+	time.Sleep(1 * time.Second)
+	str = id + "-2:pending"
+	send(conn, str, logger)
+
+	time.Sleep(5 * time.Second)
+	str = id + "-2:success"
+	send(conn, str, logger)
+
+	time.Sleep(1 * time.Second)
+	str = id + "-3:skipping"
+	send(conn, str, logger)
+
+	time.Sleep(1 * time.Second)
+	str = id + "-4:pending"
+	send(conn, str, logger)
+
+	time.Sleep(5 * time.Second)
+	str = id + "-4:success"
+	send(conn, str, logger)
+
+	time.Sleep(1 * time.Second)
+	str = id + "-5:pending"
+	send(conn, str, logger)
+
+	time.Sleep(5 * time.Second)
+	str = id + "-5:error"
+	send(conn, str, logger)
 }
 
 // mutex on websocket wrtite
